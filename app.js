@@ -257,16 +257,16 @@
     return arr;
   }
 
-  function renderBoard(numbers) {
+  function renderBoard(numbers, showNumbers = false) {
     elements.gameBoard.innerHTML = '';
     const fragment = document.createDocumentFragment();
 
     numbers.forEach((num) => {
       const cell = document.createElement('button');
-      cell.className = 'cell';
+      cell.className = `cell ${showNumbers ? '' : 'cell-masked'}`;
       cell.setAttribute('type', 'button');
       cell.dataset.number = String(num);
-      cell.textContent = num;
+      cell.textContent = showNumbers ? num : ''; // スタート前は空（カンニング完全防止）
 
       // ポインターイベントで超高速検知（遅延0ms、マルチタッチ個別対応）
       cell.addEventListener('pointerdown', (e) => {
@@ -278,6 +278,15 @@
     });
 
     elements.gameBoard.appendChild(fragment);
+  }
+
+  // スタート合図（GO!）と同時に全セルの数字を一斉点灯
+  function revealBoardNumbers() {
+    const cells = elements.gameBoard.querySelectorAll('.cell');
+    cells.forEach((cell) => {
+      cell.classList.remove('cell-masked');
+      cell.textContent = cell.dataset.number;
+    });
   }
 
   // --- タップ判定ロジック ---
@@ -362,7 +371,7 @@
     elements.timerDisplay.textContent = '00.000';
 
     const numbers = shuffleNumbers();
-    renderBoard(numbers);
+    renderBoard(numbers, false); // 数字は伏せてパネル枠のみ表示（カンニング不可）
 
     elements.readyOverlay.classList.remove('hidden');
     elements.countdownOverlay.classList.add('hidden');
@@ -413,6 +422,7 @@
   }
 
   function beginPlaying() {
+    revealBoardNumbers(); // GO! の瞬間に一斉点灯！
     gameState = 'PLAYING';
     currentTarget = 1;
     missCount = 0;
