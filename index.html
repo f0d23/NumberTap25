@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="5×5の数字盤で瞬間視と周辺視野を鍛えるトレーニング＆記録アプリ">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="瞬間視トレ">
+  <title>瞬間視・周辺視野トレーニング 25</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="app-title">瞬間視トレーニング</h1>
+      </div>
+      <div class="header-stats">
+        <div class="stat-badge best-badge">
+          <span class="stat-label">👑 BEST</span>
+          <span class="stat-val" id="headerBest">--.--s</span>
+        </div>
+        <div class="stat-badge avg-badge">
+          <span class="stat-label">📊 AVG</span>
+          <span class="stat-val" id="headerAvg">--.--s</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btnHistory" class="icon-btn" aria-label="記録履歴" title="記録履歴">📜</button>
+        <button id="btnSettings" class="icon-btn" aria-label="設定" title="設定">⚙️</button>
+      </div>
+    </header>
+
+    <!-- ダッシュボード (ターゲット数字 & タイマー) -->
+    <section class="dashboard">
+      <div class="target-card">
+        <span class="target-title">NEXT</span>
+        <span class="target-num" id="targetDisplay">1</span>
+      </div>
+      <div class="timer-card">
+        <span class="timer-title">TIME</span>
+        <span class="timer-digits" id="timerDisplay">00.000</span>
+      </div>
+      <div class="miss-card">
+        <span class="miss-title">MISS</span>
+        <span class="miss-digits" id="missDisplay">0</span>
+      </div>
+    </section>
+
+    <!-- 5x5 ゲーム盤面 -->
+    <main class="board-wrapper">
+      <div class="board-container" id="boardContainer">
+        <div class="board" id="gameBoard">
+          <!-- 25個のセルがJSによって生成されます -->
+        </div>
+
+        <!-- カウントダウン演出用オーバーレイ -->
+        <div class="countdown-overlay hidden" id="countdownOverlay">
+          <span class="countdown-text" id="countdownText">3</span>
+        </div>
+
+        <!-- ゲーム開始前 / 終了後のガイドオーバーレイ -->
+        <div class="ready-overlay" id="readyOverlay">
+          <div class="ready-content">
+            <h2 id="overlayTitle">周辺視野・瞬間視トレーニング</h2>
+            <p id="overlayDesc">1から25までの数字を順番に素早くタップ！</p>
+            <button id="btnStartGame" class="btn btn-primary btn-large">スタート！</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- フッターコントロール -->
+    <footer class="app-footer">
+      <button id="btnRestart" class="btn btn-secondary">リトライ (シャッフル)</button>
+    </footer>
+  </div>
+
+  <!-- 結果発表モーダル -->
+  <div class="modal hidden" id="resultModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="result-header">
+        <div class="result-trophy" id="resultTrophy">🏁</div>
+        <h2 id="resultTitle">FINISH!</h2>
+        <div class="new-record-tag hidden" id="newRecordTag">🎉 自己新記録！</div>
+      </div>
+      <div class="result-body">
+        <div class="result-time-box">
+          <span class="result-label">クリアタイム</span>
+          <span class="result-time" id="resultTime">00.000s</span>
+        </div>
+        <div class="result-details">
+          <div class="result-detail-item">
+            <span>ミス回数:</span>
+            <strong id="resultMisses">0回</strong>
+          </div>
+          <div class="result-detail-item">
+            <span>通算プレイ:</span>
+            <strong id="resultTotalPlays">1回目</strong>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btnPlayAgain" class="btn btn-primary btn-large">もう一度プレイ</button>
+        <button id="btnCloseResult" class="btn btn-secondary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 記録履歴・統計モーダル -->
+  <div class="modal hidden" id="historyModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card modal-large">
+      <div class="modal-header">
+        <h2>📊 プレイ記録・統計</h2>
+        <button class="modal-close" id="btnCloseHistory">&times;</button>
+      </div>
+      <div class="history-stats-grid">
+        <div class="h-stat-box">
+          <span class="h-stat-label">自己ベスト</span>
+          <span class="h-stat-val text-green" id="hStatBest">--.--s</span>
+        </div>
+        <div class="h-stat-box">
+          <span class="h-stat-label">直近5回平均</span>
+          <span class="h-stat-val" id="hStatAvg5">--.--s</span>
+        </div>
+        <div class="h-stat-box">
+          <span class="h-stat-label">全平均</span>
+          <span class="h-stat-val" id="hStatAvgAll">--.--s</span>
+        </div>
+        <div class="h-stat-box">
+          <span class="h-stat-label">プレイ回数</span>
+          <span class="h-stat-val" id="hStatTotal">0回</span>
+        </div>
+      </div>
+
+      <div class="history-list-header">
+        <h3>過去の履歴 (直近100件)</h3>
+        <div class="history-list-actions">
+          <button id="btnExportCsv" class="btn-text">CSV出力</button>
+          <button id="btnClearAllHistory" class="btn-text text-danger">全消去</button>
+        </div>
+      </div>
+      <div class="history-table-wrapper">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>日時</th>
+              <th>タイム</th>
+              <th>ミス</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <!-- 履歴リストが挿入されます -->
+          </tbody>
+        </table>
+        <div class="empty-history hidden" id="emptyHistoryNotice">まだ記録がありません。プレイしてみましょう！</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 設定モーダル -->
+  <div class="modal hidden" id="settingsModal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>⚙️ 設定</h2>
+        <button class="modal-close" id="btnCloseSettings">&times;</button>
+      </div>
+      <div class="settings-list">
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-name">効果音 (SE)</span>
+            <span class="setting-sub">タップ音・クリア音を再生</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="settingSound" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-name">バイブレーション</span>
+            <span class="setting-sub">スマホの振動フィードバック</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="settingVibrate" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-name">スタートカウントダウン</span>
+            <span class="setting-sub">OFFでスタートボタン直後に即開始</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="settingCountdown" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-name">盤面サイズ (縦向き時)</span>
+            <span class="setting-sub">横向き感覚のコンパクトが視認性おすすめ</span>
+          </div>
+          <select id="settingBoardSize" class="setting-select">
+            <option value="compact" selected>コンパクト (横向き感覚・推奨)</option>
+            <option value="normal">標準</option>
+            <option value="wide">広め</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <span class="setting-name">文字サイズ</span>
+            <span class="setting-sub">パネル内の数字の大きさ</span>
+          </div>
+          <select id="settingFontSize" class="setting-select">
+            <option value="huge" selected>特大 (くっきり太字・推奨)</option>
+            <option value="large">大</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="btnSaveSettings" class="btn btn-primary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
